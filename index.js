@@ -1,7 +1,7 @@
 const chalk = require('chalk');
 
-const FRUITS_PER_TREE = 10;
-const MAX_CROW_STEPS = 9;
+const FRUITS_PER_TREE = 4;
+const MAX_CROW_STEPS = 4;
 
 const getRandomInt = (min, max) => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -48,36 +48,36 @@ class Game {
 
   init() {
     this.trees = [ FRUITS_PER_TREE, FRUITS_PER_TREE, FRUITS_PER_TREE, FRUITS_PER_TREE ];
+    this.remainingFruits = FRUITS_PER_TREE * this.trees.length;
     this.crowSteps = MAX_CROW_STEPS;
     this.lastDice = null;
     this.turns = 0;
     this.basketCount = 0;
   }
 
+  removeFruit(index) {
+    this.trees[index] = this.trees[index] - 1;
+    this.remainingFruits--;
+  }
+
   playOneTurn() {
     const dice = rollDice();
     this.lastDice = dice;
     this.turns ++;
-    const currentFruits = this.remainingFruits;
-    const currentCrow = this.crowSteps;
     if (dice < 4 && this.trees[dice] > 0) {
-      this.trees[dice] = this.trees[dice] - 1;
-    }
-
-    if (dice === 5) {
+      this.removeFruit(dice);
+    } else if (dice === 5) {
       this.crowSteps--;
 
       if (this.crowSteps < 0) {
         throw Error('Negative crow step');
       }
-    }
-
-    if (dice === 4) {
+    } else if (dice === 4) {
       this.basketCount ++;
       this.playBasket();
-      if (this.remainingFruits > 0) {
-        this.playBasket();
-      }
+      // if (this.remainingFruits > 0) {
+      //   this.playBasket();
+      // }
     }
   }
 
@@ -94,16 +94,10 @@ class Game {
     }
     for (let i = 0; i < this.trees.length; i++) {
       if (this.trees[i] > 0) {
-        this.trees[i] = this.trees[i] - 1;
+        this.removeFruit(i);
         break;
       }
     }
-  }
-
-  get remainingFruits() {
-    return this.trees.reduce((prev, cur) => {
-      return prev + cur;
-    }, 0);
   }
 
   get hasFinished() {
@@ -141,7 +135,7 @@ class SmartGame extends Game {
       }
     }
     
-    this.trees[maxValueIndex] = this.trees[maxValueIndex] - 1;
+    this.removeFruit(maxValueIndex);
   }
 
   get name() {
@@ -160,7 +154,7 @@ class VeryStupidGame extends Game {
       }
     }
 
-    this.trees[minValueIndex] = this.trees[minValueIndex] - 1;
+    this.removeFruit(minValueIndex);
   }
 
   get name() {
@@ -173,8 +167,10 @@ const game = new Game();
 const runGame = (game) => {
   let victories = 0;
   let defeats = 0;
+
+  const start = new Date();
   
-  for(let i = 0; i < 500000; i++) {
+  for(let i = 0; i < 1000000; i++) {
     if (game.play()) {
       victories++;
     } else {
@@ -182,7 +178,10 @@ const runGame = (game) => {
     }
     game.init();
   }
-  
+
+  const elapsed = (new Date().getTime() - start.getTime()) / 1000;
+
+  console.log('Done in ', elapsed, 'seconds')
   console.log('Algo: ', game.name);
   console.log('Victories: ', victories);
   console.log('Defeats: ', defeats);
